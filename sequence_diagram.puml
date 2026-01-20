@@ -1,0 +1,60 @@
+@startuml Agriculture Project Sequence Diagram
+
+title Agriculture Project - API Sequence Diagram
+
+actor User as User
+participant "Web Browser" as Browser
+participant "Laravel Routes" as Routes
+participant "PlantController" as PlantCtrl
+participant "DashboardController" as DashCtrl
+participant "Plant Model" as PlantModel
+participant "PurchaseHistory Model" as PurchaseModel
+database "SQLite Database" as DB
+
+== API Plants Request ==
+User -> Browser: Click catalog or access /api/plants
+Browser -> Routes: GET /api/plants
+Routes -> PlantCtrl: index() method
+PlantCtrl -> PlantModel: Plant::where('deleted', false)->get()
+PlantModel -> DB: SELECT * FROM plants WHERE deleted = false
+DB --> PlantModel: Return plant records
+PlantModel --> PlantCtrl: Return Plant collection
+PlantCtrl --> Routes: Return JSON response
+Routes --> Browser: HTTP 200 with JSON data
+Browser --> User: Display plants data
+
+== API Purchase History Request ==
+User -> Browser: Access purchase history page
+Browser -> Routes: GET /api/purchase-history
+Routes -> DashCtrl: purchaseHistory() method
+DashCtrl -> PurchaseModel: PurchaseHistory::all()
+PurchaseModel -> DB: SELECT * FROM purchase_histories
+DB --> PurchaseModel: Return purchase records
+PurchaseModel --> DashCtrl: Return PurchaseHistory collection
+DashCtrl --> Routes: Return JSON response
+Routes --> Browser: HTTP 200 with JSON data
+Browser --> User: Display purchase history
+
+== Database Seeding Process ==
+note over User, DB
+  During development/setup phase
+end note
+User -> Browser: Run php artisan db:seed
+Browser -> Routes: Command execution
+Routes -> PlantSeeder: PlantSeeder::run()
+PlantSeeder -> PlantModel: Plant::create([...])
+PlantModel -> DB: INSERT INTO plants VALUES (...)
+DB --> PlantModel: Insert successful
+PlantModel --> PlantSeeder: Plant created
+PlantSeeder --> Routes: Seeding complete
+
+Routes -> PurchaseHistorySeeder: PurchaseHistorySeeder::run()
+PurchaseHistorySeeder -> PurchaseModel: PurchaseHistory::create([...])
+PurchaseModel -> DB: INSERT INTO purchase_histories VALUES (...)
+DB --> PurchaseModel: Insert successful
+PurchaseModel --> PurchaseHistorySeeder: PurchaseHistory created
+PurchaseHistorySeeder --> Routes: Seeding complete
+Routes --> Browser: Database seeded successfully
+Browser --> User: Confirmation message
+
+@enduml
